@@ -40,7 +40,7 @@ AI-powered social media content creation and cross-platform publishing tool. Gen
 - **Cloudflare Workers AI** — for image generation (free tier available)
 - **Postproxy account** — for cross-platform publishing (free tier: 10 posts/month)
 - **JSON2Video API key** — for cloud video generation (optional)
-- **Chromium** — for Remotion local video rendering (optional; only needed if using Remotion)
+- **Chromium/Chrome** — for Remotion local video rendering (optional; only needed if using Remotion)
 
 ## Quick Start
 
@@ -215,4 +215,4 @@ src/
 
 ## License
 
-Private — not open source (yet).
+Open source.
