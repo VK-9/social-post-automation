@@ -13,7 +13,6 @@ function findFfmpeg(): string {
   } catch {}
 
   const candidates = [
-    "C:\\Users\\MSI\\AppData\\Local\\Microsoft\\WinGet\\Packages\\Gyan.FFmpeg.Shared_Microsoft.Winget.Source_8wekyb3d8bbwe\\ffmpeg-8.1.2-full_build-shared\\bin\\ffmpeg.exe",
     "C:\\ProgramData\\chocolatey\\bin\\ffmpeg.exe",
     "C:\\Program Files\\ffmpeg\\bin\\ffmpeg.exe",
     "ffmpeg",
