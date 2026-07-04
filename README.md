@@ -2,6 +2,11 @@
 
 AI-powered social media content creation and cross-platform publishing tool. Generate text, images, and videos with AI, then publish or schedule across multiple platforms simultaneously — all from a single dashboard.
 
+
+## Screenshot
+
+![Social Post Automation](public/Screenshot.webp)
+
 ## Features
 
 - **AI Text Generation** — Generate social media posts from a topic using free OpenRouter models (auto-discovers free models)
