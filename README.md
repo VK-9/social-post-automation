@@ -1,6 +1,6 @@
 # Social Post Automation
 
-AI-powered social media content creation and cross-platform publishing tool. Generate text, images, and videos with AI, then publish or schedule across 6 platforms simultaneously — all from a single dashboard.
+AI-powered social media content creation and cross-platform publishing tool. Generate text, images, and videos with AI, then publish or schedule across multiple platforms simultaneously — all from a single dashboard.
 
 ## Features
 
