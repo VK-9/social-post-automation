@@ -38,6 +38,56 @@ const TONES = [
   { id: "custom", label: "Custom..." },
 ];
 
+function ConstraintWarnings({ platforms, body, hashtags, hasMedia }: {
+  platforms: string[];
+  body: string;
+  hashtags: string;
+  hasMedia: boolean;
+}) {
+  const fullBody = body + (hashtags ? `\n\n${hashtags}` : "");
+  const charCount = fullBody.length;
+
+  const issues: { platform: typeof ALL_PLATFORMS[0]; type: "error" | "warning"; message: string }[] = [];
+
+  for (const p of ALL_PLATFORMS) {
+    if (!platforms.includes(p.id)) continue;
+
+    if (p.id === "instagram" && !hasMedia) {
+      issues.push({ platform: p, type: "error", message: "Feed post requires an image or video" });
+    }
+
+    if (charCount > p.charLimit) {
+      issues.push({ platform: p, type: "error", message: `${charCount}/${p.charLimit} characters — exceeds limit by ${charCount - p.charLimit}` });
+    } else if (charCount > p.charLimit * 0.85) {
+      issues.push({ platform: p, type: "warning", message: `${charCount}/${p.charLimit} characters — near the limit` });
+    }
+  }
+
+  if (issues.length === 0) return null;
+
+  return (
+    <div className="space-y-2">
+      <p className="text-xs text-slate-400 uppercase tracking-wider font-semibold flex items-center gap-1.5">
+        <AlertCircle className="h-3 w-3" />
+        Platform Constraints
+      </p>
+      <div className="space-y-1.5">
+        {issues.map((issue, i) => (
+          <div key={`${issue.platform.id}-${i}`} className={`flex items-start gap-2 text-xs p-2 rounded-md ${issue.type === "error" ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-700"}`}>
+            <span className={`inline-flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-bold shrink-0 mt-0.5 ${issue.type === "error" ? "bg-red-200 text-red-700" : "bg-amber-200 text-amber-700"}`}>
+              {issue.type === "error" ? "!" : "?"}
+            </span>
+            <div>
+              <span className="font-semibold">{issue.platform.label}</span>
+              <span className="opacity-90"> — {issue.message}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function InfoTip({ text }: { text: string }) {
   return (
     <Tooltip>
@@ -1300,6 +1350,13 @@ export default function CreatePostPage() {
                   <video src={videoSource === "upload" ? uploadedVideoUrl : videoUrl} controls className="mt-2 h-24 rounded-lg border border-slate-200 shadow-xs" />
                 )}
               </div>
+
+              <ConstraintWarnings
+                platforms={platforms.includes("all") ? ALL_PLATFORMS.map(p => p.id) : platforms}
+                body={generatedText || ""}
+                hashtags={hashtags || ""}
+                hasMedia={!!(imageUrl || uploadedImageUrl || videoUrl || uploadedVideoUrl)}
+              />
 
               <div className="space-y-2">
                 <Label className="text-sm font-semibold text-slate-700">Schedule for later (optional)</Label>

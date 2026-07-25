@@ -43,9 +43,10 @@ yarn-error.log*
 *.db-shm
 *.db-wal
 
-# generated images / videos / test artifacts
+# generated images / videos / uploads / test artifacts
 public/img_*
 public/vid_*
+public/upload_*
 public/drawtext_*
 public/test_*
 public/arial.ttf

@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Save, Key, Palette } from "lucide-react";
+import { Save, Key, Palette, HardDrive, Trash2, RefreshCw, AlertTriangle } from "lucide-react";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -18,13 +18,30 @@ export default function SettingsPage() {
   const [cloudflareAccountId, setCloudflareAccountId] = useState("");
   const [postproxyKey, setPostproxyKey] = useState("");
   const [tone, setTone] = useState("professional");
+  const [storageInfo, setStorageInfo] = useState<any>(null);
+  const [cleaning, setCleaning] = useState(false);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (!user) router.push("/login");
       else setLoading(false);
     });
+    fetch("/api/storage-info").then(r => r.json()).then(setStorageInfo);
   }, [router]);
+
+  async function handleCleanup() {
+    setCleaning(true);
+    try {
+      const res = await fetch("/api/cleanup-storage", { method: "POST" });
+      const data = await res.json();
+      toast.success(data.deleted ? `Deleted ${data.deleted} orphaned file(s)` : "Nothing to clean up");
+      const info = await fetch("/api/storage-info").then(r => r.json());
+      setStorageInfo(info);
+    } catch {
+      toast.error("Cleanup failed");
+    }
+    setCleaning(false);
+  }
 
   if (loading) return <div className="p-8 text-center text-muted-foreground">Loading...</div>;
 
@@ -108,6 +125,47 @@ export default function SettingsPage() {
           <p>2. Connect all 6 social accounts</p>
           <p>3. Create a profile group, copy IDs to .env.local</p>
           <p>4. Each cross-post to all platforms = 1 post on free tier</p>
+        </CardContent>
+      </Card>
+
+      <Card className="neu-card">
+        <CardHeader>
+          <div className="flex items-center gap-2"><HardDrive className="h-5 w-5 text-slate-400" /><CardTitle className="text-slate-900">Storage</CardTitle></div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {storageInfo ? (
+            <>
+              <div className="neu-inset-sm p-3 flex items-start gap-2.5 text-xs rounded-lg">
+                <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                <span className="text-amber-800 leading-relaxed">
+                  Media files are automatically cleaned up <strong>7 days</strong> after a post is published. Scheduled and draft posts are preserved. Supabase free plan: <strong>{storageInfo.freeTierLimit}</strong>.
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="neu-card p-3 text-center">
+                  <p className="text-lg font-bold text-slate-800">{storageInfo.fileCount}</p>
+                  <p className="text-xs text-slate-500">Files</p>
+                </div>
+                <div className="neu-card p-3 text-center">
+                  <p className="text-lg font-bold text-slate-800">{storageInfo.totalMB} MB</p>
+                  <p className="text-xs text-slate-500">Used</p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={handleCleanup} disabled={cleaning} variant="outline" size="sm" className="gap-1.5 neu-button text-slate-700">
+                  {cleaning ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                  {cleaning ? "Cleaning..." : "Clean up orphaned files"}
+                </Button>
+                {storageInfo.storageUrl && (
+                  <a href={storageInfo.storageUrl} target="_blank" rel="noopener" className="inline-flex items-center gap-1.5 text-xs text-emerald-600 underline px-3 py-2">
+                    Open Supabase Storage
+                  </a>
+                )}
+              </div>
+            </>
+          ) : (
+            <p className="text-sm text-slate-500">Loading storage info...</p>
+          )}
         </CardContent>
       </Card>
     </div>

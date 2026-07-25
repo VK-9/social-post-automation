@@ -1,16 +1,12 @@
-import fs from "fs/promises";
-import path from "path";
 import { OPENROUTER_API_KEY, OPENROUTER_BASE, getFreeImageModels } from "./ai";
+import { uploadToStorage } from "./storage";
 
 const CLOUDFLARE_API_TOKEN = process.env.CLOUDFLARE_API_TOKEN;
 const CLOUDFLARE_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID;
 
 async function saveImage(buffer: Buffer): Promise<string> {
   const filename = `img_${Date.now()}.png`;
-  const publicDir = path.join(process.cwd(), "public");
-  await fs.mkdir(publicDir, { recursive: true });
-  await fs.writeFile(path.join(publicDir, filename), buffer);
-  return `/${filename}`;
+  return uploadToStorage(buffer, filename, "image/png");
 }
 
 export async function generateImageCloudflare(prompt: string): Promise<string> {

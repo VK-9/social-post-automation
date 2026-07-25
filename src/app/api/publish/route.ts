@@ -2,9 +2,11 @@ import { NextResponse } from "next/server";
 import { getServerSupabase } from "@/lib/db";
 import { publishToSocial } from "@/lib/publisher";
 
+const POSTPROXY_BASE = "https://api.postproxy.dev/api";
+
 export async function POST(req: Request) {
   try {
-    const { contentId, profileGroupId, profileIds } = await req.json();
+    const { contentId, profileIds: rawProfileIds } = await req.json();
 
     if (!contentId) {
       return NextResponse.json({ error: "contentId required" }, { status: 400 });
@@ -32,10 +34,42 @@ export async function POST(req: Request) {
       if (content.image_url) mediaUrls.push(content.image_url);
       if (content.video_url) mediaUrls.push(content.video_url);
 
+      let profileIds = rawProfileIds || (process.env.POSTPROXY_PROFILE_IDS || "").split(",");
+
+      const profilesRes = await fetch(`${POSTPROXY_BASE}/profiles`, {
+        headers: { Authorization: `Bearer ${process.env.POSTPROXY_API_KEY}` },
+      });
+      const profilesData = profilesRes.ok ? await profilesRes.json() : null;
+      const profilesList: any[] = profilesData ? (Array.isArray(profilesData) ? profilesData : profilesData.profiles || profilesData.data || []) : [];
+
+      const profileByPlatform = new Map(profilesList.map((p: any) => [p.platform?.toLowerCase(), p]));
+      const skipped: string[] = [];
+
+      const bodyWithHashtags = `${content.body || ""}${content.hashtags ? `\n\n${content.hashtags}` : ""}`;
+
+      profileIds = profileIds.filter((pid: string) => {
+        const profile = profilesList.find((p: any) => p.id === pid || p.platform?.toLowerCase() === pid.toLowerCase());
+        if (!profile) return true;
+        const plat = profile.platform?.toLowerCase();
+
+        if (plat === "instagram" && mediaUrls.length === 0) {
+          skipped.push("Instagram (requires media)");
+          return false;
+        }
+        if (plat === "threads" && bodyWithHashtags.length > 500) {
+          skipped.push("Threads (500 char limit)");
+          return false;
+        }
+        return true;
+      });
+
+      if (profileIds.length === 0) {
+        return NextResponse.json({ error: "No compatible platforms for this content. Instagram requires media, Threads has a 500 char limit." }, { status: 400 });
+      }
+
       const result = await publishToSocial({
-        profileGroupId: profileGroupId || process.env.POSTPROXY_PROFILE_GROUP_ID || "",
-        profileIds: profileIds || (process.env.POSTPROXY_PROFILE_IDS || "").split(","),
-        body: `${content.body}\n\n${content.hashtags}`,
+        profileIds,
+        body: bodyWithHashtags,
         mediaUrls,
       });
 
@@ -49,7 +83,11 @@ export async function POST(req: Request) {
         })
         .eq("id", contentId);
 
-      return NextResponse.json({ success: true, postId: result.postId });
+      return NextResponse.json({
+        success: true,
+        postId: result.postId,
+        ...(skipped.length ? { skipped: `Skipped: ${skipped.join(", ")}` } : {}),
+      });
     } catch (err: any) {
       await (supabase
         .from("content_items") as any)
