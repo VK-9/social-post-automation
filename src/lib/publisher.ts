@@ -1,5 +1,5 @@
 const POSTPROXY_API_KEY = process.env.POSTPROXY_API_KEY;
-const POSTPROXY_BASE = "https://api.postproxy.dev/v1";
+const POSTPROXY_BASE = "https://api.postproxy.dev/api";
 
 interface PublishParams {
   profileGroupId: string;

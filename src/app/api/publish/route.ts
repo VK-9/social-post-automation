@@ -50,13 +50,13 @@ export async function POST(req: Request) {
         .eq("id", contentId);
 
       return NextResponse.json({ success: true, postId: result.postId });
-    } catch {
+    } catch (err: any) {
       await (supabase
         .from("content_items") as any)
         .update({ status: "failed", updated_at: new Date().toISOString() })
         .eq("id", contentId);
 
-      throw new Error("Publish failed");
+      throw new Error(err?.message || "Publish failed");
     }
   } catch (err) {
     const message = err instanceof Error ? err.message : "Publish failed";
